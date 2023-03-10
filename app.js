@@ -1,13 +1,15 @@
 const express = require("express");
 const morgan = require("morgan");
+const bodyParser = require("body-parser");
+const cors = require("cors");
 
 const app = express();
 
 //* Middleware set-up
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan("tiny"));
+app.use(cors());
 
 // All routes controller imports
 const customerAuth = require("./routes/customerAuth");

@@ -1,5 +1,5 @@
 const { sendOtp, verifyOtp } = require("../util/otp");
-
+const jwt = require("jsonwebtoken");
 //* Helper functions
 const registerTheUser = async (username, phone, email, collection) => {
   let user = await collection.findOne({ phone });
@@ -81,22 +81,35 @@ exports.userOtpVerify = async (req, res, next) => {
     const db = global.db.db("spotgarage");
     const collection = db.collection("vendors");
     let user = await collection.findOne({ phone: userMobile });
-    if (await verifyOtp(userMobile, userOtp))
-      user
-        ? res.status(200).json({
-            status: true,
-            loginStatus: true,
-            message: "Go for Login!!",
-          })
-        : res.status(200).json({
-            status: true,
-            loginStatus: false,
-            message: "Go for Registration!!",
-          });
-    else
+    if (await verifyOtp(userMobile, userOtp)) {
+      if (user) {
+        const payload = {
+          _id: user._id,
+          name: user.username,
+          phone: user.phone,
+          email: user.email,
+          createdAt: Date.now(),
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET);
+        res.status(200).json({
+          status: true,
+          loginStatus: true,
+          message: "Go for Login!!",
+          token,
+        });
+      } else {
+        res.status(200).json({
+          status: true,
+          loginStatus: false,
+          message: "Go for Registration!!",
+        });
+      }
+    } else {
       res
         .status(400)
         .json({ status: false, message: "Otp Verification Failed!!" });
+    }
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Internal Server Error" });
