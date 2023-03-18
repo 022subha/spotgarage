@@ -1,6 +1,8 @@
 const express = require("express");
+const { addGarage } = require("../controller/addGarageController.js");
+const authMiddleware = require("../middlewares/authMiddleware.js");
 const router = express.Router();
-const { addGarage } = require("../controller/addGarageController");
-const { isAuthenticated } = require("../middlewares/authMiddleware");
-router.route("/addGarage").post(addGarage);
+
+router.route("/add-garage").post(authMiddleware, addGarage);
+
 module.exports = router;

@@ -1,8 +1,23 @@
-// Middleware to check if the vendor is authenticated
-exports.isAuthenticated = (req, res, next) => {
-  if (req.isAuthenticated()) {
-    return next();
-  } else {
-    res.status(401).json({ status: false, message: "Unauthorized" });
+const jwt = require("jsonwebtoken");
+
+const authMiddleware = async (req, res, next) => {
+  try {
+    const token = req.headers["authorization"].split(" ")[1];
+    jwt.verify(token, process.env.JWT_SECRET, (err) => {
+      if (err) {
+        return res
+          .status(200)
+          .json({ success: false, message: "Aunthentication Failed!!" });
+      } else {
+        next();
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(401)
+      .json({ success: false, message: "Authentication Failed!!" });
   }
 };
+
+module.exports = authMiddleware;

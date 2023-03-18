@@ -1,5 +1,7 @@
-const { sendOtp, verifyOtp } = require("../util/otp");
 const jwt = require("jsonwebtoken");
+const { ObjectId } = require("mongodb");
+const { sendOtp, verifyOtp } = require("../util/otp.js");
+
 //* Helper functions
 const registerTheUser = async (username, phone, email, collection) => {
   let user = await collection.findOne({ phone });
@@ -66,8 +68,8 @@ exports.userOtpSend = async (req, res) => {
     (await sendOtp(userMobile))
       ? res
           .status(200)
-          .json({ status: true, message: "Otp Send Successfully!!" })
-      : res.status(400).json({ status: false, message: "Otp Not Send!!" });
+          .json({ status: true, message: "Otp Sent Successfully!!" })
+      : res.status(400).json({ status: false, message: "Otp Not Sent!!" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -80,59 +82,46 @@ exports.userOtpVerify = async (req, res, next) => {
     userMobile = await transform(userMobile);
     const db = global.db.db("spotgarage");
     const collection = db.collection("vendors");
-    let user = await collection.findOne({ phone: userMobile });
+
     if (await verifyOtp(userMobile, userOtp)) {
+      let user = await collection.findOne({ phone: userMobile });
       if (user) {
         const payload = {
           _id: user._id,
           name: user.username,
           phone: user.phone,
           email: user.email,
-          createdAt: Date.now(),
+          exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
         };
 
         const token = jwt.sign(payload, process.env.JWT_SECRET);
-        res.status(200).json({
+        return res.status(200).json({
           status: true,
           loginStatus: true,
           message: "Go for Login!!",
           token,
         });
       } else {
-        res.status(200).json({
+        const payload = {
+          _id: ObjectId(),
+          phone: userMobile,
+          exp: Math.floor(Date.now() / 1000) + 10 * 60,
+        };
+        const token = jwt.sign(payload, process.env.JWT_SECRET);
+        return res.status(201).json({
           status: true,
           loginStatus: false,
           message: "Go for Registration!!",
+          token,
         });
       }
     } else {
-      res
+      return res
         .status(400)
         .json({ status: false, message: "Otp Verification Failed!!" });
     }
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-// exports.userLogin = async (req, res, next) => {
-//   try {
-//     const { userMobile } = req.body;
-
-//     // mongoClient = await connectWithDb();
-//     const db = global.db.db("spotgrage");
-//     const collection = db.collection("users");
-
-//     let confirmUser = await collection.findOne({ phone: userMobile });
-
-//     if (!confirmUser)
-//       return res
-//         .status(400)
-//         .json({ status: false, msg: "Please go for the registration!!" });
-
-//     await this.userOtpSend(req, res);
-//   } catch (err) {
-//     console.log(err);
-//   }
-// };

@@ -1,9 +1,8 @@
-const twillo = require("twilio");
-const Client = new twillo(
+const twilio = require("twilio");
+const Client = new twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
-
 const sendOtp = async (number) => {
   try {
     /* const message =  */
@@ -12,6 +11,7 @@ const sendOtp = async (number) => {
       .verifications.create({
         to: number,
         channel: "sms",
+        timeToLive: 300,
       });
     return true;
   } catch (error) {
@@ -35,7 +35,4 @@ const verifyOtp = async (number, otp) => {
   }
 };
 
-module.exports = {
-  sendOtp,
-  verifyOtp,
-};
+module.exports = { sendOtp, verifyOtp };
